@@ -31,7 +31,7 @@
 
 <button type="button" id="select-all" onclick="selectAll()">Select all</button>
 
-<input type="checkbox" id="sum" onclick="toggleSum()">
+<input type="checkbox" id="sum" onclick="toggleSum()" checked>
 <label for="sum">Sum to one set</label>
 
 <br>
@@ -150,11 +150,9 @@
                 for (let version of selectedVersions) {
                     if (sum) {
                         let num = versionNumbersObject[version];
-                        if (num == null) {
-                            continue;
+                        if (num != null) {
+                            summedVersions += num;
                         }
-
-                        summedVersions += versionNumbersObject[version];
                     } else {
                         list[version].push({t: date, y: versionNumbersObject[version]});
                     }
@@ -216,7 +214,7 @@
 
     let json;
     let chart;
-    let sum = false;
+    let sum = true;
     let loaded = false;
     let versions = [];
     let selectedVersions = []

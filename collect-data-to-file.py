@@ -66,7 +66,7 @@ softwareList = {"paper": True, "bukkit": False}
 
 with open("servers.json", "r") as file:
     servers = json.load(file)
-    if not hasVer:
+    if hasVer:
         data = servers["data"]
 
 if hasVer:
