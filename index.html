@@ -46,6 +46,32 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js" type="text/javascript"></script>
 <script>
+    const dayMillis = 24 * 60 * 60 * 1000;
+
+    function daysDiff(date1, date2) {
+        return Math.round(Math.abs((date1 - date2) / dayMillis));
+    }
+
+    function addPadding(lastDate, data, dataObject, count) {
+        let d = new Date(lastDate)
+        for (let i = 0; i < count; i++) {
+            d.setDate(d.getDate() + 1);
+            config.data.labels.push(d.toLocaleDateString());
+            for (let platform in dataObject) {
+                // Always assume there is a previous dataset to continue the same value
+                let list = data[platform];
+                if (sum) {
+                    list.push({t: d, y: list[list.length - 1]});
+                    continue;
+                }
+
+                for (let version of selectedVersions) {
+                    let l = list[version];
+                    l.push({t: d, y: l[l.length - 1]});
+                }
+            }
+        }
+    }
 
     function selectAll() {
         if (selectedVersions.length === versions.length) {
@@ -143,14 +169,21 @@
             }
         }
 
-        let objectArray = json["data"]
+        let objectArray = json["data"];
+        config.data.labels = [];
+        let lastDate = null;
         for (let object of objectArray) {
             let date = new Date(object["date"]);
-            if (init) {
-                config.data.labels.push(date.toLocaleDateString());
+            let dataObject = object["data"];
+            if (lastDate != null) {
+                // Fill in days with missing data if needed
+                let dayDiff = daysDiff(lastDate, date);
+                if (dayDiff > 1) {
+                    addPadding(lastDate, data, dataObject, dayDiff - 1)
+                }
             }
 
-            let dataObject = object["data"];
+            let hasData = false
             for (let platform in dataObject) {
                 let list = data[platform];
                 let versionNumbersObject = dataObject[platform];
@@ -161,14 +194,21 @@
                         if (num != null) {
                             summedVersions += num;
                         }
-                    } else {
+                    } else if (hasData || versionNumbersObject[version] !== 0) {
+                        hasData = true;
                         list[version].push({t: date, y: versionNumbersObject[version]});
                     }
                 }
 
-                if (sum) {
+                if (sum && (hasData || summedVersions !== 0)) {
+                    hasData = true;
                     list.push({t: date, y: summedVersions});
                 }
+            }
+
+            if (hasData) {
+                lastDate = date;
+                config.data.labels.push(date.toLocaleDateString());
             }
         }
 
@@ -242,7 +282,8 @@
 
 <div class="footer">
     <p>
-        <a href="https://github.com/KennyTV/ServerStats" target="_new"><img src="/assets/img/github.png" width="25" height="20"></a>
+        <a href="https://github.com/KennyTV/ServerStats" target="_new"><img src="/assets/img/github.png" width="27"
+                                                                            height="25"></a>
     </p>
 </div>
 

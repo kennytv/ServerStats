@@ -58,7 +58,8 @@ def handle(appendTo, fName, full=False):
             continue
 
         for ver, y in dataObject[software].items():
-            booketData[ver] = booketData[ver] - y
+            if booketData.__contains__(ver):
+                booketData[ver] = booketData[ver] - y
 
 
 hasVer = argutil.hasArg("date")
