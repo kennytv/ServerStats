@@ -3,7 +3,7 @@ import os
 import argutil
 
 minVersion = 8
-expandVersions = ["1.16"]
+expandVersions = ["1.17"]
 
 
 def handle(appendTo, fName, full=False):
@@ -77,7 +77,7 @@ else:
     # List entire data directory
     data = []
     servers["data"] = data
-    for fileName in os.listdir("data"):
+    for fileName in sorted(os.listdir("data")):
         if fileName.endswith(".json"):
             handle(data, fileName)
 
