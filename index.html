@@ -12,9 +12,9 @@
             bottom: 0;
             text-align: center;
         }
-        
+
         .footer {
-            filter: brightness(0);  
+            filter: brightness(0);
         }
 
         canvas {
@@ -56,21 +56,24 @@
     }
 
     function addPadding(lastDate, data, dataObject, count) {
-        let d = new Date(lastDate)
+        let fromDate = new Date(lastDate)
         for (let i = 0; i < count; i++) {
-            d.setDate(d.getDate() + 1);
-            config.data.labels.push(d.toLocaleDateString());
+            fromDate.setDate(fromDate.getDate() + 1);
+            config.data.labels.push(fromDate.toLocaleDateString());
             for (let platform in dataObject) {
-                // Always assume there is a previous dataset to continue the same value
                 let list = data[platform];
                 if (sum) {
-                    list.push({t: d, y: list[list.length - 1]});
+                    let previousEntry = list[list.length - 1];
+                    let previousValue = previousEntry != null ? previousEntry.y : 0;
+                    list.push({t: fromDate, y: previousValue});
                     continue;
                 }
 
                 for (let version of selectedVersions) {
                     let l = list[version];
-                    l.push({t: d, y: l[l.length - 1]});
+                    let previousEntry = l[l.length - 1];
+                    let previousValue = previousEntry != null ? previousEntry.y : 0;
+                    l.push({t: fromDate, y: previousValue});
                 }
             }
         }
@@ -182,11 +185,13 @@
                 // Fill in days with missing data if needed
                 let dayDiff = daysDiff(lastDate, date);
                 if (dayDiff > 1) {
-                    addPadding(lastDate, data, dataObject, dayDiff - 1)
+                    addPadding(lastDate, data, dataObject, dayDiff - 1);
+                    lastDate = date;
                 }
             }
 
-            let hasData = false
+            let hasData = false;
+            let platformsWithoutData = new Set(Object.keys(dataObject));
             for (let platform in dataObject) {
                 let list = data[platform];
                 let versionNumbersObject = dataObject[platform];
@@ -203,14 +208,24 @@
                     }
                 }
 
-                if (sum && (hasData || summedVersions !== 0)) {
+                // Add sum data if another platform has data, if the current platform has more than 0 servers,
+                // or this is not the first data entry (so that 0 data does not mean old data is repeated)
+                if (sum && (hasData || summedVersions !== 0 || lastDate != null)) {
                     hasData = true;
+                    platformsWithoutData.delete(platform);
                     list.push({t: date, y: summedVersions});
                 }
             }
 
+            // At least one platform has a data value
             if (hasData) {
-                lastDate = date;
+                lastDate = date; // Only important the first time data is found
+
+                // Add 0 values for platforms without data
+                for (let platform of platformsWithoutData) {
+                    data[platform].push({t: date, y: 0});
+                }
+
                 config.data.labels.push(date.toLocaleDateString());
             }
         }
