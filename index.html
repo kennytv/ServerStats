@@ -202,8 +202,10 @@
                         if (num != null) {
                             summedVersions += num;
                         }
-                    } else if (hasData || versionNumbersObject[version] !== 0) {
+                    } else if (hasData || (versionNumbersObject[version] != null && versionNumbersObject[version] !== 0)) {
+                        // Show individual data if there already is data now (or previously) or if this data is not 0
                         hasData = true;
+                        platformsWithoutData.delete(platform);
                         list[version].push({t: date, y: versionNumbersObject[version]});
                     }
                 }
@@ -222,9 +224,20 @@
                 lastDate = date; // Only important the first time data is found
 
                 // Add 0 values for platforms without data
-                for (let platform of platformsWithoutData) {
-                    data[platform].push({t: date, y: 0});
+                if (sum) {
+                    for (let platform of platformsWithoutData) {
+                        data[platform].push({t: date, y: 0});
+                    }
+                } else {
+                    for (let platform of platformsWithoutData) {
+                        // Fill all selected versions
+                        let platformData = data[platform];
+                        for (let version of selectedVersions) {
+                            platformData[version].push({t: date, y: 0});
+                        }
+                    }
                 }
+
 
                 config.data.labels.push(date.toLocaleDateString());
             }
