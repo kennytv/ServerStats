@@ -3,7 +3,7 @@ import os
 import argutil
 
 minVersion = 8
-expandVersions = ["1.17"]
+expandVersions = ["1.18"]
 
 
 def handle(appendTo, fName, full=False):
@@ -14,6 +14,11 @@ def handle(appendTo, fName, full=False):
     appendTo.append({"date": fName.replace(".json", ""), "data": dataObject})
 
     for software in softwareList:
+        if software not in currentData:
+            # :eyes:
+            dataObject[software] = {}
+            continue
+
         softwareData = currentData[software]
         versionData = {}
         dataObject[software] = versionData
@@ -25,7 +30,7 @@ def handle(appendTo, fName, full=False):
             # Collect 1.x.y as 1.x
             ver = o["name"]
 
-            # Ignore the custom gargage
+            # Ignore the custom garbage
             if not ver.startswith("1."):
                 continue
 
@@ -65,10 +70,16 @@ def handle(appendTo, fName, full=False):
 hasVer = argutil.hasArg("date")
 softwareList = {"paper": True, "bukkit": False}
 
-with open("servers.json", "r") as file:
-    servers = json.load(file)
-    if hasVer:
-        data = servers["data"]
+if os.path.isfile("servers.json"):
+    with open("servers.json", "r") as file:
+        servers = json.load(file)
+        if hasVer:
+            data = servers["data"]
+else:
+    with open("servers-template.json", "r") as file:
+        servers = json.load(file)
+        if hasVer:
+            data = servers["data"]
 
 if hasVer:
     # Append the single data file
