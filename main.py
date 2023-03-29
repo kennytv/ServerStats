@@ -19,7 +19,7 @@ def getServers(softwareId):
 
 
 def do():
-    software = {"paper": 580, "bukkit": 1, "purpur": 5103}
+    software = {"paper": 580, "bukkit": 1, "purpur": 5103, "folia": 18084}
 
     data = {}
     for name, sId in software.items():

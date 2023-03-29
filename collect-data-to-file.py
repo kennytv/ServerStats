@@ -3,7 +3,7 @@ import os
 import argutil
 
 minVersion = 8
-expandVersions = ["1.18"]
+expandVersions = ["1.19"]
 
 
 def handle(appendTo, fName, full=False):
