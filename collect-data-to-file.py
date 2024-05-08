@@ -2,95 +2,98 @@ import json
 import os
 import argutil
 
-minVersion = 8
-expandVersions = ["1.19"]
+MIN_VERSION = 8
+EXPAND_VERSIONS = ["1.20"]
+SOFTWARE_LIST = {
+    "paper": True,
+    "bukkit": False
+}
 
 
-def handle(appendTo, fName, full=False):
-    with open("data/" + fName) as f:
-        currentData = json.load(f)
+def load_json(file_name):
+    with open(file_name, "r") as f:
+        return json.load(f)
 
-    dataObject = {}
-    appendTo.append({"date": fName.replace(".json", ""), "data": dataObject})
 
-    for software in softwareList:
-        if software not in currentData:
-            # :eyes:
-            dataObject[software] = {}
+def add_to_version_data(version, version_data, server_count):
+    # Collect 1.x.y as 1.x
+    separator_index = version.index(".", 2)
+    parent_version = version[0:separator_index]
+    try:
+        if int(parent_version[2:]) < MIN_VERSION:
+            pass
+    except ValueError:
+        # Ignore dumb version
+        pass
+
+    if parent_version in EXPAND_VERSIONS:
+        # Exempted
+        version_data[version] = server_count
+        pass
+
+    if parent_version not in version_data:
+        version_data[parent_version] = server_count
+    else:
+        version_data[parent_version] = version_data[parent_version] + server_count
+
+
+def handle(append_to, file_name, full=False):
+    processed_data = {}
+    raw_data_by_date = load_json(os.path.join("data", file_name))
+    append_to.append({"date": file_name.replace(".json", ""), "data": processed_data})
+
+    for software in SOFTWARE_LIST:
+        if software not in raw_data_by_date:
+            # Tracked software didn't exist yet
+            processed_data[software] = {}
             continue
 
-        softwareData = currentData[software]
-        versionData = {}
-        dataObject[software] = versionData
-        for o in softwareData["minecraft_version"]:
+        version_data = {}
+        processed_data[software] = version_data
+        software_data = raw_data_by_date[software]
+        for software_version_data in software_data["minecraft_version"]:
+            version = software_version_data["name"]
+            server_count = software_version_data["y"]
             if full:
-                versionData[o["name"]] = o["y"]
+                version_data[version] = server_count
                 continue
 
-            # Collect 1.x.y as 1.x
-            ver = o["name"]
-
             # Ignore the custom garbage
-            if not ver.startswith("1."):
+            if not version.startswith("1."):
                 continue
 
             try:
-                index = ver.index(".", 2)
-                shortVer = ver[0:index]
-                try:
-                    if int(shortVer[2:]) < minVersion:
-                        continue
-                except Exception:
-                    # Dum version
-                    continue
-
-                if shortVer in expandVersions:
-                    # Exempted
-                    versionData[ver] = o["y"]
-                    continue
-
-                if shortVer not in versionData:
-                    versionData[shortVer] = o["y"]
-                else:
-                    versionData[shortVer] = versionData[shortVer] + o["y"]
+                add_to_version_data(version, version_data, server_count)
             except ValueError:
-                versionData[ver] = o["y"]
+                version_data[version] = server_count
 
-    # Now we have to subtract dum stuff from the Bukkit numbers, yay!
-    booketData = dataObject["bukkit"]
-    for software, removeFromBukkit in softwareList.items():
-        if not removeFromBukkit:
+    # TODO This is kind of dumb and can break results due to how Paper vs. the global Bukkit stats are counted
+    #  bStats unfortunately doesn't have proper platform distinction here
+    booketData = processed_data["bukkit"]
+    for software, remove_from_bukkit in SOFTWARE_LIST.items():
+        if not remove_from_bukkit:
             continue
 
-        for ver, y in dataObject[software].items():
-            if booketData.__contains__(ver):
-                booketData[ver] = booketData[ver] - y
+        for version, y in processed_data[software].items():
+            if version in booketData:
+                booketData[version] = booketData[version] - y
 
-
-hasVer = argutil.hasArg("date")
-softwareList = {"paper": True, "bukkit": False}
 
 if os.path.isfile("servers.json"):
-    with open("servers.json", "r") as file:
-        servers = json.load(file)
-        if hasVer:
-            data = servers["data"]
+    servers = load_json("servers.json")
 else:
-    with open("servers-template.json", "r") as file:
-        servers = json.load(file)
-        if hasVer:
-            data = servers["data"]
+    servers = load_json("servers-template.json")
 
-if hasVer:
+if argutil.hasArg("date"):
     # Append the single data file
-    handle(data, argutil.getArg("date") + ".json")
+    handle(servers["data"], argutil.getArg("date") + ".json")
 else:
     # List entire data directory
     data = []
     servers["data"] = data
-    for fileName in sorted(os.listdir("data")):
-        if fileName.endswith(".json"):
-            handle(data, fileName)
+    for file_name in sorted(os.listdir("data")):
+        if file_name.endswith(".json"):
+            handle(data, file_name)
 
 with open("servers.json", "w") as file:
     json.dump(servers, file)

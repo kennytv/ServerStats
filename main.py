@@ -6,32 +6,32 @@ import requests
 import argutil
 
 
-def loadJson(url):
+def load_json(url):
     return requests.get(url).json()
 
 
-def getData(softwareId, chartId):
-    return loadJson("https://bstats.org/api/v1/plugins/{}/charts/{}/data".format(softwareId, chartId))
+def get_data(software_id, chart_id):
+    return load_json("https://bstats.org/api/v1/plugins/{}/charts/{}/data".format(software_id, chart_id))
 
 
-def getServers(softwareId):
-    return loadJson("https://bstats.org/api/v1/plugins/{}/charts/servers/data/?maxElements=1".format(softwareId))[0][1]
+def get_servers(software_id):
+    return load_json("https://bstats.org/api/v1/plugins/{}/charts/servers/data/?maxElements=1".format(software_id))[0][1]
 
 
 def do():
     software = {"paper": 580, "bukkit": 1, "purpur": 5103, "folia": 18084}
 
     data = {}
-    for name, sId in software.items():
+    for name, software_id in software.items():
         # Different names for old software, yay
-        if sId == 1:
+        if software_id == 1:
             mcVersionKey = "minecraftVersion"
         else:
             mcVersionKey = "minecraft_version"
 
         # Grab server count just to have it, even though only version data will be used
-        data[name] = {"servers": getServers(sId),
-                      "minecraft_version": getData(sId, mcVersionKey)}
+        data[name] = {"servers": get_servers(software_id),
+                      "minecraft_version": get_data(software_id, mcVersionKey)}
 
     fileName = date.today().strftime("data/%Y-%m-%d.json")
     with open(fileName, "w") as file:
