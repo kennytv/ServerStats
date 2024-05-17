@@ -3,8 +3,7 @@
 <html lang="en">
 <head>
     <title>Server Usage</title>
-    <script src="/assets/js/Chart.min.js"></script>
-    <script src="/assets/js/utils.js"></script>
+    <script src="/assets/js/chart.min.js"></script>
     <style>
         .footer {
             position: fixed;
@@ -37,9 +36,13 @@
 <div style="width:75%;">
     <canvas id="canvas"></canvas>
 </div>
-<br>
-<br>
 
+(One weird spike is from bStats breaking, the other two are ???, the month of stale data is a month of me not realizing
+the cronjob was broken)
+<br>
+Negative numbers come from Paper also reporting numbers without plugins and bStats API being only half useful - but the
+tendency remains correct
+<br>
 <button type="button" id="select-all" onclick="selectAll()">Select all</button>
 
 <input type="checkbox" id="sum" onclick="toggleSum()" checked>
@@ -65,7 +68,7 @@
                 if (sum) {
                     let previousEntry = list[list.length - 1];
                     let previousValue = previousEntry != null ? previousEntry.y : 0;
-                    list.push({t: fromDate, y: previousValue});
+                    list.push({x: fromDate, y: previousValue});
                     continue;
                 }
 
@@ -73,7 +76,7 @@
                     let l = list[version];
                     let previousEntry = l[l.length - 1];
                     let previousValue = previousEntry != null ? previousEntry.y : 0;
-                    l.push({t: fromDate, y: previousValue});
+                    l.push({x: fromDate, y: previousValue});
                 }
             }
         }
@@ -151,6 +154,9 @@
                 data[platformId] = [];
                 let color = platformInfo["color"];
                 config.data.datasets.push({
+                    pointRadius: 2,
+                    spanGaps: true,
+                    normalized: true,
                     label: platformName,
                     backgroundColor: color,
                     borderColor: color,
@@ -165,6 +171,9 @@
                     let colorNames = Object.keys(window.chartColors);
                     let color = window.chartColors[colorNames[config.data.datasets.length % colorNames.length]];
                     config.data.datasets.push({
+                        pointRadius: 2,
+                        spanGaps: true,
+                        normalized: true,
                         label: platformName + " " + version,
                         backgroundColor: color,
                         borderColor: color,
@@ -206,7 +215,7 @@
                         // Show individual data if there already is data now (or previously) or if this data is not 0
                         hasData = true;
                         platformsWithoutData.delete(platform);
-                        list[version].push({t: date, y: versionNumbersObject[version]});
+                        list[version].push({x: date, y: versionNumbersObject[version]});
                     }
                 }
 
@@ -215,7 +224,7 @@
                 if (sum && (hasData || summedVersions !== 0 || lastDate != null)) {
                     hasData = true;
                     platformsWithoutData.delete(platform);
-                    list.push({t: date, y: summedVersions});
+                    list.push({x: date, y: summedVersions});
                 }
             }
 
@@ -226,14 +235,14 @@
                 // Add 0 values for platforms without data
                 if (sum) {
                     for (let platform of platformsWithoutData) {
-                        data[platform].push({t: date, y: 0});
+                        data[platform].push({x: date, y: 0});
                     }
                 } else {
                     for (let platform of platformsWithoutData) {
                         // Fill all selected versions
                         let platformData = data[platform];
                         for (let version of selectedVersions) {
-                            platformData[version].push({t: date, y: 0});
+                            platformData[version].push({x: date, y: 0});
                         }
                     }
                 }
@@ -256,37 +265,43 @@
             datasets: []
         },
         options: {
+            cubicInterpolationMode: 'monotone',
             responsive: true,
-            title: {
-                display: true,
-                text: 'Server software usage'
-            },
-            tooltips: {
-                mode: 'index',
-                intersect: false,
-            },
-            hover: {
-                mode: 'nearest',
-                intersect: true
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Server software usage'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                decimation: {
+                    enabled: true,
+                }
             },
             scales: {
-                xAxes: [{
+                x: {
                     display: true,
-                    scaleLabel: {
+                    title: {
                         display: true,
-                        labelString: 'Date'
+                        text: 'Date'
                     }
-                }],
-                yAxes: [{
+                },
+                y: {
                     display: true,
                     ticks: {
                         beginAtZero: true
                     },
-                    scaleLabel: {
+                    title: {
                         display: true,
-                        labelString: 'Servers'
+                        text: 'Servers'
                     }
-                }]
+                }
             }
         }
     };
@@ -319,45 +334,4 @@
 </div>
 
 </body>
-<!--
-  __    __                                       ________  __     __
- |  \  /  \                                     |        \|  \   |  \
- | $$ /  $$ ______   _______   _______   __    __\$$$$$$$$| $$   | $$
- | $$/  $$ /      \ |       \ |       \ |  \  |  \ | $$   | $$   | $$
- | $$  $$ |  $$$$$$\| $$$$$$$\| $$$$$$$\| $$  | $$ | $$    \$$\ /  $$
- | $$$$$\ | $$    $$| $$  | $$| $$  | $$| $$  | $$ | $$     \$$\  $$
- | $$ \$$\| $$$$$$$$| $$  | $$| $$  | $$| $$__/ $$ | $$      \$$ $$
- | $$  \$$\\$$     \| $$  | $$| $$  | $$ \$$    $$ | $$       \$$$
-  \$$   \$$ \$$$$$$$ \$$   \$$ \$$   \$$ _\$$$$$$$  \$$        \$
-                                        |  \__| $$
-                                         \$$    $$
-                                          \$$$$$$
-
-⠀⠀           ⣠⢎⢎⠪⡂⢕⠡⡃⢆⠱⡠⢃⠜⢄⠕⡡⢊⠜⡠⠣⡨⢊⠜⡰⠌⠾⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡼⡑⢅⠪⡐⠅⠪⡐⢌⠢⡑⠌⡢⢑⠌⠢⡑⠌⡢⠑⢌⠢⠑⡌⠰⡁⡣⢘⠵⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⢍⠊⠔⠡⡈⠜⡠⠑⠄⢅⠌⡂⠢⡁⢊⠢⠘⢄⠊⢌⠂⢅⢑⢈⠢⡨⠠⡑⠨⠢⡫⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡗⢅⠑⡁⡑⠠⠊⡀⡑⠌⠐⠄⢊⠐⡨⠀⢅⠊⡠⠊⠠⠊⡠⠂⡁⠢⠐⡐⢈⠂⡑⢄⢙⢇⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⡸⡑⢌⠐⠄⢌⠐⡁⠔⢀⠊⡨⠠⢁⠢⢀⠑⠠⢂⠐⠌⡐⢁⠄⠌⠠⢁⠌⠠⠁⠔⢀⠢⢀⠣⢳⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢠⠫⡂⠔⢁⠂⠢⠐⡀⢊⠠⠂⡐⢐⠀⡂⢁⠈⠢⠠⡈⠄⠢⡀⢆⢨⢂⠔⡀⢅⠈⠂⠔⢀⠅⡐⢁⠫⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⢀⢏⠪⢀⠊⡠⠈⢄⠡⠐⡀⠢⢈⠠⠂⠨⢀⠂⡁⡊⣐⢄⣳⠕⠯⠚⠓⠛⠚⠶⣄⠅⡡⠈⢄⠐⠠⢁⠊⡜⣥⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⣜⠥⡑⠠⠂⡐⠈⠄⠄⡡⠠⢁⠂⠄⡑⠠⢁⢌⢔⢮⠎⠋⠁⠀⠀⠀⠀⠀⠀⠀⠑⢧⠐⡡⠠⢈⠂⢄⠡⡈⢮⡀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠰⣝⢆⠢⠁⠂⠌⠠⠑⡀⢂⠐⠄⡈⡐⢀⠑⢤⡳⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢙⡬⡀⠂⠔⢀⠢⠐⡈⢎⡇⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⢘⢮⡣⡂⠡⢁⠊⠠⠁⠔⢀⠁⠢⠐⡀⢅⠈⡲⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢷⡨⠨⡀⠅⢐⠈⠄⢪⢖⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠈⡮⡳⡕⡡⢀⠊⠠⠑⠈⢄⠁⡊⢀⠢⠠⢈⠌⠳⡔⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢳⢕⢄⠑⢄⢈⠢⡁⢯⡂⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠘⡮⡹⣖⠤⡁⢊⠠⠑⡀⠂⠔⢀⠂⠢⠠⢈⠂⠔⠠⡑⠝⢖⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠳⢝⣔⢦⡱⣜⠵⠃⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠸⡢⡊⡛⢼⢔⡄⡡⠠⢁⠌⠠⡈⢄⠁⠂⠌⠠⡁⠔⢈⠂⡙⢕⠢⠲⠪⡚⠪⠪⡋⢚⠕⡫⡲⡀⠀⠁⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠳⡨⢂⠡⠊⡱⠳⠶⣄⣊⠠⠂⠄⢊⠈⢄⠡⠐⡀⠅⡈⠄⢂⠁⡑⠄⠌⡐⠁⠌⠐⠄⡊⢨⡛⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢕⠔⡀⠊⠠⡈⠢⡑⢍⡳⣳⢜⡤⣌⠠⢂⠂⠔⢀⠢⠈⠄⢂⠐⡈⠄⠨⡀⠅⠑⡠⢈⢆⡽⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠨⢆⠌⡈⠐⠄⠡⠐⡡⢪⢗⢽⠆⠉⠙⠣⠷⣜⡤⡢⡡⡨⡀⡢⢐⢈⠔⡠⣊⢦⣪⠖⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠳⡨⡀⡑⢈⠂⡡⠐⢌⡷⣙⢖⣄⠀⠀⠀⠀⠈⠉⠙⠚⠚⠪⠳⠓⠋⠋⠁⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢖⠄⠢⠐⠠⠂⢌⠠⢛⢮⡪⡜⣕⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣎⢐⠡⢈⠂⠢⠐⡁⢝⢮⡪⡢⡹⣂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣢⠡⢂⢈⠐⡁⠔⠠⢓⢵⡪⢢⠑⡝⢢⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠫⡢⠄⢌⢀⠊⡐⠡⢊⢷⡑⡌⡐⠡⡘⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⡔⢢⢀⠊⢄⠑⠔⡡⢻⡔⢌⠂⡕⡸⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⡢⡡⡨⠠⡑⠌⡢⢑⠽⣪⡪⣢⠏⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢲⢐⠅⠢⡑⠨⡢⣙⢜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢕⡕⡡⢊⠒⢔⢌⡗⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠕⡵⣩⡲⡕⠃
--->
 </html>
