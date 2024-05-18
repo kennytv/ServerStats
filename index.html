@@ -1,58 +1,146 @@
 <!doctype html>
-<!-- Don't judge me -->
 <html lang="en">
 <head>
     <title>Server Usage</title>
     <script src="/assets/js/chart.min.js"></script>
     <style>
-        .footer {
-            position: fixed;
-            left: 50%;
-            bottom: 0;
-            text-align: center;
-        }
-
-        .footer {
-            filter: brightness(0);
-        }
-
-        canvas {
-            -moz-user-select: none;
-            -webkit-user-select: none;
-            -ms-user-select: none;
-        }
-
-        label {
+        body {
             font-family: "Trebuchet MS", sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #fafafa;
+            color: #333;
+        }
+
+        main {
+            padding-top: 20px;
+            width: 75%;
+            margin: 0 auto;
+        }
+
+        .info {
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.5;
+            margin-left: 50px;
+        }
+
+        .topcontrols {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .controls {
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        button, input[type="checkbox"] + label {
+            padding: 9px 14px;
+            background: #4CAF50;
+            border: 2px solid #4CAF50;
+            border-radius: 20px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s ease, transform 0.2s ease;
         }
 
         button {
-            font-family: "Trebuchet MS", sans-serif;
+            background: #4CAF50;
+            border: 2px solid #4CAF50;
+            color: white;
+        }
+
+        button:hover, input[type="checkbox"] + label:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        #select-all {
+            background: #FF9800;
+            border: 2px solid #FF9800;
+            border-radius: 10px;
+        }
+
+        #select-all:hover {
+            background: #FB8C00;
+        }
+
+        input[type="checkbox"] {
+            display: none;
+        }
+
+        input[type="checkbox"] + label {
+            background: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        input[type="checkbox"]:checked + label {
+            background: #4CAF50;
+            color: white;
+        }
+
+        footer {
+            filter: brightness(0);
+        }
+
+        footer img {
+            width: 27px;
+            height: 25px;
         }
     </style>
 </head>
 
 <body>
-<div style="width:75%;">
-    <canvas id="canvas"></canvas>
-</div>
+<main>
+    <div>
+        <canvas id="canvas"></canvas>
+    </div>
+    <div class="controls">
+    </div>
+    <div class="topcontrols">
+        <button type="button" id="select-all" onclick="selectAll()">Select all</button>
+        <input type="checkbox" id="sum" onclick="toggleSum()" checked>
+        <label for="sum">Sum to one set</label>
+    </div>
+    <div class="info">
+        <p>
+            One weird spike is from bStats breaking, the other two are ???, the month of stale data is a month of me not
+            realizing the cronjob was broken.
+            <br>
+            Negative numbers come from Paper also reporting numbers without plugins and bStats API being only half
+            useful - but the tendency remains correct.
+        </p>
+    </div>
+</main>
+<footer>
+    <p>
+        <a href="https://github.com/kennytv/ServerStats" target="_new">
+            <img src="/assets/images/github.png" alt="GitHub">
+        </a>
+    </p>
+</footer>
 
-(One weird spike is from bStats breaking, the other two are ???, the month of stale data is a month of me not realizing
-the cronjob was broken)
-<br>
-Negative numbers come from Paper also reporting numbers without plugins and bStats API being only half useful - but the
-tendency remains correct
-<br>
-<button type="button" id="select-all" onclick="selectAll()">Select all</button>
-
-<input type="checkbox" id="sum" onclick="toggleSum()" checked>
-<label for="sum">Sum to one set</label>
-
-<br>
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js" type="text/javascript"></script>
+<script src="/assets/js/jquery.min.js"></script>
 <script>
     const dayMillis = 24 * 60 * 60 * 1000;
+    const chartColors = {
+        red: 'rgb(255, 99, 132)',
+        orange: 'rgb(255, 159, 64)',
+        yellow: 'rgb(255, 205, 86)',
+        green: 'rgb(75, 192, 192)',
+        blue: 'rgb(54, 162, 235)',
+        purple: 'rgb(153, 102, 255)',
+        grey: 'rgb(201, 203, 207)'
+    };
 
     function daysDiff(date1, date2) {
         return Math.round(Math.abs((date1 - date2) / dayMillis));
@@ -126,8 +214,8 @@ tendency remains correct
         label.htmlFor = version;
         label.innerHTML = version;
 
-        document.body.appendChild(input);
-        document.body.appendChild(label);
+        document.querySelector('.controls').appendChild(input);
+        document.querySelector('.controls').appendChild(label);
     }
 
     function loadData(init) {
@@ -168,8 +256,8 @@ tendency remains correct
                 for (let version of selectedVersions) {
                     data[platformId][version] = [];
 
-                    let colorNames = Object.keys(window.chartColors);
-                    let color = window.chartColors[colorNames[config.data.datasets.length % colorNames.length]];
+                    let colorNames = Object.keys(chartColors);
+                    let color = chartColors[colorNames[config.data.datasets.length % colorNames.length]];
                     config.data.datasets.push({
                         pointRadius: 2,
                         spanGaps: true,
@@ -325,13 +413,5 @@ tendency remains correct
         loadData(true);
     });
 </script>
-
-<div class="footer">
-    <p>
-        <a href="https://github.com/kennytv/ServerStats" target="_new"><img src="/assets/img/github.png" width="27"
-                                                                            height="25"></a>
-    </p>
-</div>
-
 </body>
 </html>
