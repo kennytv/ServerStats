@@ -96,6 +96,26 @@
             width: 27px;
             height: 25px;
         }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #333;
+                color: #fafafa;
+            }
+
+            label {
+                color: white;
+            }
+
+            input[type="checkbox"] + label {
+                background: #555;
+                color: #fafafa;
+            }
+
+            .info {
+                color: #aaa;
+            }
+        }
     </style>
 </head>
 
@@ -131,6 +151,9 @@
 
 <script src="/assets/js/jquery.min.js"></script>
 <script>
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        Chart.defaults.color = '#aaa';
+    }
     const dayMillis = 24 * 60 * 60 * 1000;
     const chartColors = {
         red: 'rgb(255, 99, 132)',
