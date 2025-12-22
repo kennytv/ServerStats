@@ -3,7 +3,7 @@ import os
 import argutil
 
 MIN_VERSION = 8
-EXPAND_VERSIONS = ["1.20"]
+EXPAND_VERSIONS = ["1.21"]
 SOFTWARE_LIST = {
     "paper": True,
     "bukkit": False
@@ -52,6 +52,10 @@ def handle(append_to, file_name, full=False):
         processed_data[software] = version_data
         software_data = raw_data_by_date[software]
         for software_version_data in software_data["minecraft_version"]:
+            if isinstance(software_version_data, str):
+                # Oh well
+                continue
+
             version = software_version_data["name"]
             server_count = software_version_data["y"]
             if full:

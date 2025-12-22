@@ -1,7 +1,8 @@
 https://kennytv.eu/secretgraph/
 ---
 
-*Please don't judge me, web dev sucks*
+> [!IMPORTANT]
+> The scripts and site have been moved to my main site: https://github.com/kennytv/kennytv.eu
 
 ## Usage
 * `py main.py` to start a scheduler that will execute the task every day at 18:00 (6pm)
